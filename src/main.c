@@ -103,18 +103,42 @@ int main()
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
+    float* kocke = 0;
+    nec_push(kocke, -1.0f);
+    nec_push(kocke, 1.0f);
+    nec_push(kocke, 0.0f);
+    nec_push(kocke, 0.5f);
+
+    unsigned int uKocke;
+    glGenTextures(1, &uKocke);
+    glBindTexture(GL_TEXTURE_1D, uKocke);
+    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA, nec_size(kocke) >> 2, 0, GL_RGBA, GL_FLOAT, kocke);
+
+    glUseProgram(shaderProgram);
+    glUniform1i(glGetUniformLocation(shaderProgram, "uKocke"), 0);
+
+    //GLenum err;
+    //while((err = glGetError()) != GL_NO_ERROR) printf("ERROR\n%u\n", err);
+
     while(!glfwWindowShouldClose(window) && !glfwGetKey(window, GLFW_KEY_ESCAPE))
     {
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         glUseProgram(shaderProgram);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_1D, uKocke);
 
         int uResolution = glGetUniformLocation(shaderProgram, "uResolution");
         glUniform2f(uResolution, W, H);
 
         int uTime = glGetUniformLocation(shaderProgram, "uTime");
         glUniform1f(uTime, glfwGetTime());
+
+        int uSize = glGetUniformLocation(shaderProgram, "uSize");
+        glUniform1i(uSize, nec_size(kocke) >> 2);
 
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -123,6 +147,7 @@ int main()
         glfwPollEvents();
     }
 
+    nec_free(kocke);
     glfwDestroyWindow(window);
     glfwTerminate();
     return 0;

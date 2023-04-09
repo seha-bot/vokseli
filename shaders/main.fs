@@ -1,25 +1,22 @@
 #version 330 core
+uniform sampler1D uKocke;
 uniform vec2 uResolution;
 uniform float uTime;
+uniform int uSize;
 
 #define MAX_STEPS 100
 #define MAX_RAY 100.0
 #define MIN_RAY 0.0001
 
-mat2 rot(float a)
-{
-    float s = sin(a);
-    float c = cos(a);
-    return mat2(c, -s, s, c);
-}
-
 float nearest(vec3 p)
 {
-    vec3 k = p-vec3(1.0, 0.0, 5.0);
-    k.xz *= rot(uTime);
-    float fkocka = length(max(abs(k)-0.5,0.0));
-    float fkockica = length(max(abs(p-vec3(1.0+sin(uTime), 2.0, 5.0+cos(uTime)*3.0))-0.1,0.0));
-    return min(min(fkocka, fkockica), abs(p.y + 1.0));
+    float d = abs(p.y + 1.0);
+    for(int i = 0; i < uSize; i++)
+    {
+        vec4 kocka = texelFetch(uKocke, 0, 0).rgba;
+        d = min(d, length(max(abs(p - kocka.xyz) - kocka.w, 0.0)));
+    }
+    return d;
 }
 
 float march(vec3 ro, vec3 rd)
@@ -49,7 +46,7 @@ float light(vec3 p)
     vec3 ndir = normalize(dir);
     vec3 npos = normal(p);
     float hit = march(p + npos * 0.05, ndir);
-    return dot(ndir, npos) * (length(dir) > hit ? 0.1 : 1.0);
+    return dot(ndir, npos) * clamp(hit / length(dir), 0.0, 1.0);
 }
 
 void main()
@@ -57,7 +54,7 @@ void main()
     vec2 uv = gl_FragCoord.xy / uResolution - 0.5;
     uv.x *= uResolution.x / uResolution.y;
 
-    vec3 cam = vec3(0.0, 1.0, 0.0);
+    vec3 cam = vec3(0.0, 1.0, -5.0);
     vec3 dir = normalize(vec3(uv, 1.0));
 
     float ray = march(cam, dir);
@@ -66,6 +63,7 @@ void main()
     {
         vec3 p = cam + dir * ray;
         c = vec3(light(p));
+        c = pow(c, vec3(.45));
     }
 
     gl_FragColor = vec4(c, 1.0f);
