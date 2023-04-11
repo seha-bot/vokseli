@@ -1,6 +1,7 @@
 #include "../inc/glad/glad.h"
 #include "../inc/GLFW/glfw3.h"
 #include "../inc/nec.h"
+#include <stdint.h>
 #include <stdio.h>
 
 #define W 800
@@ -104,17 +105,17 @@ int main()
     glBindVertexArray(0);
 
     float* kocke = 0;
-    nec_push(kocke, -1.0f);
-    nec_push(kocke, 1.0f);
     nec_push(kocke, 0.0f);
-    nec_push(kocke, 0.5f);
+    nec_push(kocke, 0.0f);
+    nec_push(kocke, 10.0f);
+    nec_push(kocke, 1.0f);
 
     unsigned int uKocke;
     glGenTextures(1, &uKocke);
     glBindTexture(GL_TEXTURE_1D, uKocke);
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA, nec_size(kocke) >> 2, 0, GL_RGBA, GL_FLOAT, kocke);
+    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA32F, nec_size(kocke) >> 2, 0, GL_RGBA, GL_FLOAT, kocke);
 
     glUseProgram(shaderProgram);
     glUniform1i(glGetUniformLocation(shaderProgram, "uKocke"), 0);
