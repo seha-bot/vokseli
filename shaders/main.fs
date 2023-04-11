@@ -1,19 +1,19 @@
 #version 330 core
-uniform sampler1D uKocke;
-uniform vec2 uResolution;
-uniform float uTime;
-uniform int uSize;
+uniform sampler1D u_kocke;
+uniform vec2 u_resolution;
+uniform float u_time;
+uniform int u_size;
 
-#define MAX_STEPS 100
-#define MAX_RAY 100.0
-#define MIN_RAY 0.0001
+#define MAX_STEPS 300
+#define MAX_RAY 200.0
+#define MIN_RAY 0.001
 
 float nearest(vec3 p)
 {
     float d = abs(p.y + 1.0);
-    for(int i = 0; i < uSize; i++)
+    for(int i = 0; i < u_size; i++)
     {
-        vec4 kocka = texelFetch(uKocke, 0, 0).rgba;
+        vec4 kocka = texelFetch(u_kocke, i, 0).rgba;
         d = min(d, length(max(abs(p - kocka.xyz) - kocka.w, 0.0)));
     }
     return d;
@@ -51,8 +51,8 @@ float light(vec3 p)
 
 void main()
 {
-    vec2 uv = gl_FragCoord.xy / uResolution - 0.5;
-    uv.x *= uResolution.x / uResolution.y;
+    vec2 uv = gl_FragCoord.xy / u_resolution - 0.5;
+    uv.x *= u_resolution.x / u_resolution.y;
 
     vec3 cam = vec3(0.0, 1.0, -5.0);
     vec3 dir = normalize(vec3(uv, 1.0));

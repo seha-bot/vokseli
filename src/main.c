@@ -3,6 +3,7 @@
 #include "../inc/nec.h"
 #include <stdint.h>
 #include <stdio.h>
+#include <math.h>
 
 #define W 800
 #define H 600
@@ -44,6 +45,11 @@ unsigned int create_shader(GLenum type, const char* source)
     return shader;
 }
 
+typedef struct
+{
+    float x, y, z, a;
+} kocka;
+
 int main()
 {
     if(!glfwInit())
@@ -73,10 +79,10 @@ int main()
     const char* frag_source = load_shader("shaders/main.fs");
     unsigned int vert = create_shader(GL_VERTEX_SHADER, vert_source);
     unsigned int frag = create_shader(GL_FRAGMENT_SHADER, frag_source);
-    unsigned int shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vert);
-    glAttachShader(shaderProgram, frag);
-    glLinkProgram(shaderProgram);
+    unsigned int program = glCreateProgram();
+    glAttachShader(program, vert);
+    glAttachShader(program, frag);
+    glLinkProgram(program);
     glDeleteShader(vert);
     glDeleteShader(frag);
     nec_free(vert_source);
@@ -104,50 +110,44 @@ int main()
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    float* kocke = 0;
-    nec_push(kocke, 0.0f);
-    nec_push(kocke, 0.0f);
-    nec_push(kocke, 10.0f);
-    nec_push(kocke, 1.0f);
-
-    unsigned int uKocke;
-    glGenTextures(1, &uKocke);
-    glBindTexture(GL_TEXTURE_1D, uKocke);
+    unsigned int u_kocke;
+    glGenTextures(1, &u_kocke);
+    glBindTexture(GL_TEXTURE_1D, u_kocke);
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA32F, nec_size(kocke) >> 2, 0, GL_RGBA, GL_FLOAT, kocke);
 
-    glUseProgram(shaderProgram);
-    glUniform1i(glGetUniformLocation(shaderProgram, "uKocke"), 0);
+    glUseProgram(program);
+    glUniform1i(glGetUniformLocation(program, "u_kocke"), 0);
 
-    //GLenum err;
-    //while((err = glGetError()) != GL_NO_ERROR) printf("ERROR\n%u\n", err);
+    kocka* kocke = 0;
+    kocka a = {-1.5f, 1.0f, 1.0f, 1.5f};
+    kocka b = {2.5f, 0.0f, 3.0f, 0.5f};
+    nec_push(kocke, a);
+    nec_push(kocke, b);
 
     while(!glfwWindowShouldClose(window) && !glfwGetKey(window, GLFW_KEY_ESCAPE))
     {
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        kocke[1].a = sin(glfwGetTime());
 
-        glUseProgram(shaderProgram);
+        glBindTexture(GL_TEXTURE_1D, u_kocke);
+        glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA32F, nec_size(kocke), 0, GL_RGBA, GL_FLOAT, kocke);
+
+        glUseProgram(program);
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_1D, uKocke);
+        glBindTexture(GL_TEXTURE_1D, u_kocke);
 
-        int uResolution = glGetUniformLocation(shaderProgram, "uResolution");
-        glUniform2f(uResolution, W, H);
+        glUniform2f(glGetUniformLocation(program, "u_resolution"), W, H);
+        glUniform1f(glGetUniformLocation(program, "u_time"), glfwGetTime());
+        glUniform1i(glGetUniformLocation(program, "u_size"), nec_size(kocke));
 
-        int uTime = glGetUniformLocation(shaderProgram, "uTime");
-        glUniform1f(uTime, glfwGetTime());
-
-        int uSize = glGetUniformLocation(shaderProgram, "uSize");
-        glUniform1i(uSize, nec_size(kocke) >> 2);
-
+        glClear(GL_COLOR_BUFFER_BIT);
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 6);
-
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
+    glDeleteTextures(1, &u_kocke);
     nec_free(kocke);
     glfwDestroyWindow(window);
     glfwTerminate();
